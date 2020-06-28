@@ -33,6 +33,7 @@ class MediaController < ApplicationController
     current_user.notifications.where(notifiable_type: 'Medium',
                                      notifiable_id: @medium.id).each(&:destroy)
     I18n.locale = @medium.locale_with_inheritance
+    commontator_thread_show(@medium)
     render layout: 'application_no_sidebar'
   end
 
@@ -52,6 +53,7 @@ class MediaController < ApplicationController
   def update
     I18n.locale = @medium.locale_with_inheritance
     old_manuscript_data = @medium.manuscript_data
+    old_geogebra_data = @medium.geogebra_data
     @medium.update(medium_params)
     @errors = @medium.errors
     return unless @errors.empty?
@@ -62,12 +64,17 @@ class MediaController < ApplicationController
     # touch lectures that import this medium
     @medium.importing_lectures.update_all(updated_at: Time.now)
     @medium.sanitize_type!
-    # detach the video or manuscript if this was chosen by the user
-    detach_video_or_manuscript
+    # detach components if this was chosen by the user
+    detach_components
     # create screenshot for manuscript if necessary
     changed_manuscript = @medium.manuscript_data != old_manuscript_data
     if @medium.manuscript.present? && changed_manuscript
       @medium.manuscript_derivatives!
+      @medium.save
+    end
+    changed_geogebra = @medium.geogebra_data != old_geogebra_data
+    if @medium.geogebra.present? && changed_geogebra
+      @medium.geogebra_derivatives!
       @medium.save
     end
     if @medium.sort == 'Quiz' &&params[:medium][:create_quiz_graph] == '1'
@@ -88,6 +95,14 @@ class MediaController < ApplicationController
       if @quarantine_added.any?
         render :destination_warning
         return
+      end
+    end
+    comments_locked = params[:medium][:comments_locked].to_i == 1
+    if @medium.commontator_thread.is_closed? != comments_locked
+      if comments_locked
+        @medium.commontator_thread.close(current_user)
+      else
+        @medium.commontator_thread.reopen
       end
     end
     @tags_without_section = []
@@ -139,6 +154,8 @@ class MediaController < ApplicationController
   def publish
     release_state = params[:medium][:released]
     @medium.update(released: release_state)
+    lock_comments = params[:medium][:lock_comments]
+    @medium.commontator_thread.close(current_user) if lock_comments.to_i == 1
     if @medium.sort == 'Quiz' && params[:medium][:publish_vertices] == '1'
       @medium.becomes(Quiz).publish_vertices!(current_user, release_state)
     end
@@ -193,8 +210,7 @@ class MediaController < ApplicationController
       return
     end
     I18n.locale = @medium.locale_with_inheritance
-    @toc = @medium.toc_to_vtt.remove(Rails.root.join('public').to_s)
-    @ref = @medium.references_to_vtt.remove(Rails.root.join('public').to_s)
+    @vtt_container = @medium.create_vtt_container!
     @time = params[:time]
     render layout: 'thyme'
   end
@@ -215,12 +231,26 @@ class MediaController < ApplicationController
     redirect_to @medium.manuscript_url_with_host
   end
 
+  # run the geogebra applet using Geogebra's Javascript API
+  def geogebra
+    if @medium.geogebra.nil?
+      redirect_to :root, alert: I18n.t('controllers.no_geogebra')
+      return
+    end
+    I18n.locale = @medium.locale_with_inheritance
+    render layout: 'geogebra'
+  end
+
   # add a toc item for the video
   def add_item
     I18n.locale = @medium.locale_with_inheritance
     @time = params[:time].to_f
     @item = Item.new(medium: @medium,
                      start_time: TimeStamp.new(total_seconds: @time))
+    if @medium.sort == 'Kaviar' &&
+        @medium.teachable_type.in?(['Lesson', 'Lecture'])
+      @item.section = @medium.teachable&.sections&.first
+    end
   end
 
   # add a reference for the video
@@ -264,9 +294,18 @@ class MediaController < ApplicationController
     render layout: 'enrich'
   end
 
+  # if the medium is associated to a lesson of a lecture which is in script mode
+  # and the lesson has associated script-items, it is possible to import these
+  # items into the toc of the medium
+  def import_script_items
+    @medium.import_script_items!
+  end
+
   # export the video's toc data to a .vtt file
   def export_toc
-    file = @medium.toc_to_vtt
+    @vtt_container = @medium.create_vtt_container!
+    file = Tempfile.new
+    @vtt_container.table_of_contents.stream(file.path)
     cookies['fileDownload'] = 'true'
 
     send_file file,
@@ -277,7 +316,9 @@ class MediaController < ApplicationController
 
   # export the video's references to a .vtt file
   def export_references
-    file = @medium.references_to_vtt
+    @vtt_container = @medium.create_vtt_container!
+    file = Tempfile.new
+    @vtt_container.references.stream(file.path)
     cookies['fileDownload'] = 'true'
 
     send_file file,
@@ -289,8 +330,7 @@ class MediaController < ApplicationController
   # export the video's screenshot to a .vtt file
   def export_screenshot
     return if @medium.screenshot.nil?
-    path = Rails.root.join('public', 'tmp')
-    file = Tempfile.new(['screenshot', '.png'], path)
+    file = Tempfile.new
     @medium.screenshot.stream(file.path)
     cookies['fileDownload'] = 'true'
 
@@ -361,12 +401,19 @@ class MediaController < ApplicationController
     end
   end
 
+  def show_comments
+    commontator_thread_show(@medium)
+    render layout: 'application_no_sidebar'
+  end
+
   private
 
   def medium_params
     params.require(:medium).permit(:sort, :description, :video, :manuscript,
-                                   :external_reference_link, :teachable_type,
-                                   :teachable_id, :released, :text, :locale,
+                                   :external_reference_link,
+                                   :geogebra, :geogebra_app_name,
+                                   :teachable_type, :teachable_id,
+                                   :released, :text, :locale,
                                    :content,
                                    editor_ids: [],
                                    tag_ids: [],
@@ -393,10 +440,13 @@ class MediaController < ApplicationController
     end
   end
 
-  def detach_video_or_manuscript
+  def detach_components
     if params[:medium][:detach_video] == 'true'
       @medium.update(video: nil)
       @medium.update(screenshot: nil)
+    end
+    if params[:medium][:detach_geogebra] == 'true'
+      @medium.update(geogebra: nil)
     end
     return unless params[:medium][:detach_manuscript] == 'true'
     @medium.update(manuscript: nil)
@@ -538,8 +588,6 @@ class MediaController < ApplicationController
       if @medium.teachable.sections.count == 1
         section = @medium.teachable.sections.first
         section.tags << @tags_without_section
-        section.update(tags_order: section.tags_order +
-                                     @tags_without_section.map(&:id))
       end
     end
   end

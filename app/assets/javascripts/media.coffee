@@ -107,6 +107,15 @@ $(document).on 'turbolinks:load', ->
     $('#medium-basics-warning').show()
     return
 
+  # if user detaches geogebra, adjust hidden values
+  # (relevant on media edit page)
+  $('#detach-geogebra').on 'click', ->
+    $('#upload-geogebra-hidden').val('')
+    $('#geogebra-meta').hide()
+    $('#medium_detach_geogebra').val('true')
+    $('#medium-basics-warning').show()
+    return
+
   # test external link provided by the user in an external tab
   # (relevant on media edit page)
   $(document).on 'click', '#test-external-link', ->
@@ -409,6 +418,10 @@ $(document).on 'turbolinks:load', ->
     $.ajax Routes.get_statistics_path(mediumId),
       type: 'GET'
       dataType: 'script'
+    return
+
+  $('#manuscriptAccordion :input').on 'change', ->
+    $('.details-warning').show()
     return
 
   return

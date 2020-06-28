@@ -34,15 +34,34 @@ $(document).on 'turbolinks:load', ->
   # prepare action box when related tags are edited
   $('#selectRelatedTags').on 'click', ->
     $('#selectRelatedTagsForm').show()
-    $('#tagActionType').show()
+    $('#tagActionTypeRelated').show()
     $(this).hide()
+    $('#selectTagRealizations').hide()
+    $('#tagActionHeader').hide()
+    return
+
+  # prepare action box when related tags are edited
+  $('#selectTagRealizations').on 'click', ->
+    $('#selectTagRealizationsForm').show()
+    $('#tagActionTypeRealizations').show()
+    $(this).hide()
+    $('#selectRelatedTags').hide()
     $('#tagActionHeader').hide()
     return
 
   $('#cancelSelectRelatedTags').on 'click', ->
     $('#selectRelatedTagsForm').hide()
-    $('#tagActionType').hide()
+    $('#tagActionTypeRelated').hide()
     $('#tagActionHeader').show()
+    $('#selectRelatedTags').show()
+    $('#selectTagRealizations').show()
+    return
+
+  $('#cancelSelectRealizations').on 'click', ->
+    $('#selectTagRealizationsForm').hide()
+    $('#tagActionTypeRealizations').hide()
+    $('#tagActionHeader').show()
+    $('#selectTagRealizations').show()
     $('#selectRelatedTags').show()
     return
 
@@ -152,6 +171,41 @@ $(document).on 'turbolinks:load', ->
   $(document).on 'click', '.cancel-section-association', ->
     location.reload(true)
     return
+
+  $erdbeereTags = $('#erdbeereTags')
+  if $erdbeereTags.length > 0
+    $.ajax Routes.find_erdbeere_tags_path(),
+      type: 'GET'
+      dataType: 'script'
+      data: {
+        sort: $erdbeereTags.data('sort')
+        id: $erdbeereTags.data('id')
+      }
+    return
+
+  $erdbeereRealizations = $('.erdbeere-realization')
+  $erdbeereRealizations.each ->
+    $.ajax Routes.display_erdbeere_info_path(),
+      type: 'GET'
+      dataType: 'script'
+      data: {
+        sort: $(this).data('sort')
+        id: $(this).data('id')
+      }
+    return
+
+  $selectTagRealizations = $('#selectTagRealizationsForm')
+  if $selectTagRealizations.length > 0
+    $.ajax Routes.fill_realizations_select_path(),
+      type: 'GET'
+      dataType: 'script'
+      data: {
+        id: $selectTagRealizations.data('id')
+      }
+    return
+
+
+
   return
 # clean up before turbolinks caches
 $(document).on 'turbolinks:before-cache', ->

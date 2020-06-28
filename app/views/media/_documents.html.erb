@@ -1,5 +1,4 @@
-<div class="card bg-light"
-     style="max-height: 80vh;">
+<div class="card bg-light">
   <div class="card-header">
     <div class="row">
       <div class="col-6">
@@ -17,7 +16,7 @@
       </div>
     </div>
   </div>
-  <div class="card-body">
+  <div class="card-body <%= compact ? 'card-compact' : 'card-xl' %>">
     <% if medium.sort =='Question' %>
       <%= render partial: 'media/question',
                  locals: { question: medium.becomes(Question) } %>
@@ -42,6 +41,11 @@
     <% unless medium.sort.in?(['Script', 'Quiz']) %>
       <%= render partial: 'media/external_link',
                  locals: { f: f } %>
+    <% end %>
+    <% if medium.sort.in?(['Sesam', 'Remark']) %>
+      <%= render partial: 'media/geogebra',
+                 locals: { medium: medium,
+                           f: f } %>
     <% end %>
   </div>
 </div>

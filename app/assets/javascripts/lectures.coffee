@@ -31,6 +31,14 @@ $(document).on 'turbolinks:load', ->
     $('.new-in-lecture').hide()
     return
 
+  # if any input is given to the comments form, disable other input
+  $('#lecture-comments-form :input').on 'change', ->
+    $('#lecture-comments-warning').show()
+    $('[data-toggle="collapse"]').addClass('disabled')
+    $('.fa-edit').hide()
+    $('.new-in-lecture').hide()
+    return
+
   # if any input is given to the organizational form, disable other input
   $('#lecture-organizational-form :input').on 'change', ->
     disableExceptOrganizational()
@@ -252,6 +260,31 @@ $(document).on 'turbolinks:load', ->
   match_normal.addListener (result) ->
     if result.matches
       largeDisplay()
+    return
+
+  $('#erdbeere_structures_collapse_button').on 'click', ->
+    lectureId = $(this).data('lecture')
+    loading = $(this).data('loading')
+    $('#erdbeereStructuresBody').empty().append(loading)
+    $.ajax Routes.edit_structures_path(lectureId),
+      type: 'GET'
+      dataType: 'script'
+    return
+
+  $lectureStructures = $('#lectureStructuresInfo')
+  if $lectureStructures.length > 0
+    structures = $lectureStructures.data('structures')
+    for s in structures
+      $('#structure-item-' + s).show()
+
+  $('#switchGlobalStructureSearch').on 'click', ->
+    if $(this).is(':checked')
+      $('[id^="structure-item-"]').show()
+    else
+      $('[id^="structure-item-"]').hide()
+      structures = $lectureStructures.data('structures')
+      for s in structures
+        $('#structure-item-' + s).show()
     return
 
   return

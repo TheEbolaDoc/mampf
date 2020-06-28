@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_12_04_174533) do
+ActiveRecord::Schema.define(version: 2020_06_13_090342) do
 
   create_table "announcements", force: :cascade do |t|
     t.integer "lecture_id"
@@ -44,6 +44,13 @@ ActiveRecord::Schema.define(version: 2019_12_04_174533) do
     t.index ["lecture_id"], name: "index_chapters_on_lecture_id"
   end
 
+  create_table "clicker_votes", force: :cascade do |t|
+    t.integer "value"
+    t.integer "clicker_id"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+  end
+
   create_table "clickers", force: :cascade do |t|
     t.integer "editor_id"
     t.integer "question_id"
@@ -55,6 +62,49 @@ ActiveRecord::Schema.define(version: 2019_12_04_174533) do
     t.integer "alternatives"
     t.text "instance"
     t.index ["editor_id"], name: "index_clickers_on_editor_id"
+  end
+
+  create_table "commontator_comments", force: :cascade do |t|
+    t.integer "thread_id", null: false
+    t.string "creator_type", null: false
+    t.integer "creator_id", null: false
+    t.string "editor_type"
+    t.integer "editor_id"
+    t.text "body", null: false
+    t.datetime "deleted_at"
+    t.integer "cached_votes_up", default: 0
+    t.integer "cached_votes_down", default: 0
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.integer "parent_id"
+    t.index ["cached_votes_down"], name: "index_commontator_comments_on_cached_votes_down"
+    t.index ["cached_votes_up"], name: "index_commontator_comments_on_cached_votes_up"
+    t.index ["creator_id", "creator_type", "thread_id"], name: "index_commontator_comments_on_c_id_and_c_type_and_t_id"
+    t.index ["editor_type", "editor_id"], name: "index_commontator_comments_on_editor_type_and_editor_id"
+    t.index ["parent_id"], name: "index_commontator_comments_on_parent_id"
+    t.index ["thread_id", "created_at"], name: "index_commontator_comments_on_thread_id_and_created_at"
+  end
+
+  create_table "commontator_subscriptions", force: :cascade do |t|
+    t.integer "thread_id", null: false
+    t.string "subscriber_type", null: false
+    t.integer "subscriber_id", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["subscriber_id", "subscriber_type", "thread_id"], name: "index_commontator_subscriptions_on_s_id_and_s_type_and_t_id", unique: true
+    t.index ["thread_id"], name: "index_commontator_subscriptions_on_thread_id"
+  end
+
+  create_table "commontator_threads", force: :cascade do |t|
+    t.string "commontable_type"
+    t.integer "commontable_id"
+    t.string "closer_type"
+    t.integer "closer_id"
+    t.datetime "closed_at"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["closer_type", "closer_id"], name: "index_commontator_threads_on_closer_type_and_closer_id"
+    t.index ["commontable_type", "commontable_id"], name: "index_commontator_threads_on_c_id_and_c_type", unique: true
   end
 
   create_table "course_self_joins", force: :cascade do |t|
@@ -97,6 +147,32 @@ ActiveRecord::Schema.define(version: 2019_12_04_174533) do
     t.integer "forum_id"
   end
 
+  create_table "division_course_joins", force: :cascade do |t|
+    t.integer "division_id", null: false
+    t.integer "course_id", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["course_id"], name: "index_division_course_joins_on_course_id"
+    t.index ["division_id"], name: "index_division_course_joins_on_division_id"
+  end
+
+  create_table "division_translations", force: :cascade do |t|
+    t.integer "division_id", null: false
+    t.string "locale", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.text "name"
+    t.index ["division_id"], name: "index_division_translations_on_division_id"
+    t.index ["locale"], name: "index_division_translations_on_locale"
+  end
+
+  create_table "divisions", force: :cascade do |t|
+    t.integer "program_id"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["program_id"], name: "index_divisions_on_program_id"
+  end
+
   create_table "editable_user_joins", force: :cascade do |t|
     t.integer "editable_id"
     t.string "editable_type"
@@ -125,6 +201,13 @@ ActiveRecord::Schema.define(version: 2019_12_04_174533) do
     t.datetime "updated_at", precision: 6, null: false
     t.index ["medium_id"], name: "index_imports_on_medium_id"
     t.index ["teachable_type", "teachable_id"], name: "index_imports_on_teachable_type_and_teachable_id"
+  end
+
+  create_table "item_self_joins", force: :cascade do |t|
+    t.integer "item_id", null: false
+    t.integer "related_item_id", null: false
+    t.index ["item_id"], name: "index_item_self_joins_on_item_id"
+    t.index ["related_item_id"], name: "index_item_self_joins_on_related_item_id"
   end
 
   create_table "items", force: :cascade do |t|
@@ -174,6 +257,8 @@ ActiveRecord::Schema.define(version: 2019_12_04_174533) do
     t.text "locale"
     t.text "sort"
     t.integer "forum_id"
+    t.text "structure_ids"
+    t.boolean "comments_disabled"
     t.index ["teacher_id"], name: "index_lectures_on_teacher_id"
     t.index ["term_id"], name: "index_lectures_on_term_id"
   end
@@ -244,6 +329,10 @@ ActiveRecord::Schema.define(version: 2019_12_04_174533) do
     t.text "solution"
     t.text "question_sort"
     t.text "content"
+    t.text "geogebra_data"
+    t.text "geogebra_app_name"
+    t.integer "position"
+    t.boolean "text_input", default: false
     t.index ["quizzable_type", "quizzable_id"], name: "index_media_on_quizzable_type_and_quizzable_id"
     t.index ["teachable_type", "teachable_id"], name: "index_media_on_teachable_type_and_teachable_id"
   end
@@ -279,6 +368,30 @@ ActiveRecord::Schema.define(version: 2019_12_04_174533) do
     t.index ["tag_id"], name: "index_notions_on_tag_id"
   end
 
+  create_table "program_translations", force: :cascade do |t|
+    t.integer "program_id", null: false
+    t.string "locale", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.text "name"
+    t.index ["locale"], name: "index_program_translations_on_locale"
+    t.index ["program_id"], name: "index_program_translations_on_program_id"
+  end
+
+  create_table "programs", force: :cascade do |t|
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.integer "subject_id"
+    t.index ["subject_id"], name: "index_programs_on_subject_id"
+  end
+
+  create_table "readers", force: :cascade do |t|
+    t.integer "user_id"
+    t.integer "thread_id"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+  end
+
   create_table "referrals", force: :cascade do |t|
     t.text "start_time"
     t.text "end_time"
@@ -306,6 +419,7 @@ ActiveRecord::Schema.define(version: 2019_12_04_174533) do
     t.integer "tag_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "tag_position"
     t.index ["section_id"], name: "index_section_tag_joins_on_section_id"
     t.index ["tag_id"], name: "index_section_tag_joins_on_tag_id"
   end
@@ -323,9 +437,25 @@ ActiveRecord::Schema.define(version: 2019_12_04_174533) do
     t.index ["chapter_id"], name: "index_sections_on_chapter_id"
   end
 
+  create_table "subject_translations", force: :cascade do |t|
+    t.integer "subject_id", null: false
+    t.string "locale", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.text "name"
+    t.index ["locale"], name: "index_subject_translations_on_locale"
+    t.index ["subject_id"], name: "index_subject_translations_on_subject_id"
+  end
+
+  create_table "subjects", force: :cascade do |t|
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+  end
+
   create_table "tags", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "realizations"
   end
 
   create_table "terms", force: :cascade do |t|
@@ -333,6 +463,7 @@ ActiveRecord::Schema.define(version: 2019_12_04_174533) do
     t.string "season"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "active", default: false
   end
 
   create_table "thredded_categories", force: :cascade do |t|
@@ -590,22 +721,44 @@ ActiveRecord::Schema.define(version: 2019_12_04_174533) do
     t.datetime "confirmed_at"
     t.datetime "confirmation_sent_at"
     t.string "unconfirmed_email"
+    t.boolean "unread_comments", default: false
+    t.boolean "study_participant", default: false
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
   create_table "votes", force: :cascade do |t|
-    t.integer "value"
-    t.integer "clicker_id"
+    t.string "votable_type"
+    t.integer "votable_id"
+    t.string "voter_type"
+    t.integer "voter_id"
+    t.boolean "vote_flag"
+    t.string "vote_scope"
+    t.integer "vote_weight"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["votable_id", "votable_type", "vote_scope"], name: "index_votes_on_votable_id_and_votable_type_and_vote_scope"
+    t.index ["votable_type", "votable_id"], name: "index_votes_on_votable_type_and_votable_id"
+    t.index ["voter_id", "voter_type", "vote_scope"], name: "index_votes_on_voter_id_and_voter_type_and_vote_scope"
+    t.index ["voter_type", "voter_id"], name: "index_votes_on_voter_type_and_voter_id"
+  end
+
+  create_table "vtt_containers", force: :cascade do |t|
+    t.text "table_of_contents_data"
+    t.text "references_data"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
   end
 
   add_foreign_key "announcements", "lectures"
   add_foreign_key "announcements", "users", column: "announcer_id"
-  add_foreign_key "course_self_joins", "courses"
+  add_foreign_key "commontator_comments", "commontator_comments", column: "parent_id", on_update: :restrict, on_delete: :cascade
+  add_foreign_key "commontator_comments", "commontator_threads", column: "thread_id", on_update: :cascade, on_delete: :cascade
+  add_foreign_key "commontator_subscriptions", "commontator_threads", column: "thread_id", on_update: :cascade, on_delete: :cascade
+  add_foreign_key "divisions", "programs"
   add_foreign_key "imports", "media"
   add_foreign_key "items", "media"
   add_foreign_key "items", "sections"
+  add_foreign_key "programs", "subjects"
 end

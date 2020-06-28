@@ -1,0 +1,32 @@
+<h4>
+	Mein Semester
+</h4>
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 row-cols-xxl-6">
+	<%= render partial: 'main/start/teachable',
+						 collection: @current_stuff,
+						 as: :teachable %>
+</div>
+<h4>
+	Weitere abonnierte Veranstaltungen
+</h4>
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 row-cols-xxl-6">
+	<%= render partial: 'main/start/teachable',
+						 collection: @inactive_lectures,
+						 as: :teachable %>
+</div>
+<h4>
+	Aktuelle Veranstaltungen
+</h4>
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 row-cols-xxl-6">
+	<%= render partial: 'main/start/teachable',
+						 collection: @other_current_lectures,
+						 as: :teachable %>
+</div>
+<h4>
+	Sonstige Veranstaltungen
+</h4>
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 row-cols-xxl-6">
+	<%= render partial: 'main/start/teachable',
+						 collection: @nonsubscribed_lectures.sort_by(&:begin_date).reverse,
+						 as: :teachable %>
+</div>

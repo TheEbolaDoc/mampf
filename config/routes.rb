@@ -6,6 +6,8 @@ Rails.application.routes.draw do
     mount Sidekiq::Web => '/sidekiq'
   end
 
+  mount Commontator::Engine => '/commontator'
+
   get 'search/index'
 
   get '/administration', to: 'administration#index',
@@ -14,10 +16,14 @@ Rails.application.routes.draw do
                               as: 'exit_administration'
   get '/administration/profile', to: 'administration#profile',
                                  as: 'elevated_profile'
+  get '/administration/classification', to: 'administration#classification',
+                                        as: 'classification'
 
   resources :announcements, only: [ :index, :new, :create]
 
   resources :answers, except: [:index, :show, :edit]
+
+  resources :areas, except: [:show]
 
   get 'chapters/:id/list_sections', to: 'chapters#list_sections',
                                      as: 'list_sections'
@@ -38,6 +44,8 @@ Rails.application.routes.draw do
 
   resources :clickers, except: [:index, :update]
 
+  resources :clicker_votes, only: :create
+
   get 'c/:id', to: 'clickers#show'
 
   get 'courses/:course_id/food', to: 'media#index',
@@ -48,7 +56,7 @@ Rails.application.routes.draw do
                              as: 'display_course'
   get 'courses/:id/show_random_quizzes', to: 'courses#show_random_quizzes',
                                          as: 'show_random_quizzes'
-  get 'courses/:id/take_random_quiz', to: 'courses#take_random_quiz',
+  post 'courses/:id/take_random_quiz', to: 'courses#take_random_quiz',
                                       as: 'random_quiz'
   get 'courses/:id/render_question_counter', to: 'courses#render_question_counter',
                                              as: 'render_question_counter'
@@ -61,6 +69,8 @@ Rails.application.routes.draw do
   get 'courses/:id/destroy_forum', to: 'courses#destroy_forum',
                                  as: 'destroy_course_forum'
   resources :courses, except: [:index]
+
+  resources :divisions, except: [:show]
 
   get 'events/update_vertex_default', as: 'update_vertex_default'
   get 'events/update_branching', as: 'update_branching'
@@ -87,6 +97,9 @@ Rails.application.routes.draw do
   get 'events/render_question_parameters', as: 'render_question_parameters'
   get 'events/render_import_media', as: 'render_import_media'
   get 'events/cancel_import_media', as: 'cancel_import_media'
+
+  get 'interactions/export_interactions', as: 'export_interactions'
+  get 'interactions/export_probes', as: 'export_probes'
 
   resources :interactions, only: [:index]
 
@@ -116,13 +129,23 @@ Rails.application.routes.draw do
                                          as: 'organizational'
   get 'lectures/:id/show_subscribers', to: 'lectures#show_subscribers',
                                        as: 'show_subscribers'
-  post 'lecture/:id/publish', to: 'lectures#publish',
+  get 'lectures/:id/show_structures', to: 'lectures#show_structures',
+                                      as: 'show_structures'
+  get 'lectures/:id/edit_structures', to: 'lectures#edit_structures',
+                                      as: 'edit_structures'
+  get 'lectures/:id/search_examples', to: 'lectures#search_examples',
+                                      as: 'search_examples'
+  post 'lectures/:id/publish', to: 'lectures#publish',
                               as: 'publish_lecture'
   post 'lectures/:id/import_media', to: 'lectures#import_media',
                                     as: 'lecture_import_media'
   delete 'lectures/:id/remove_imported_medium',
          to: 'lectures#remove_imported_medium',
          as: 'lecture_remove_imported_medium'
+  get 'lectures/:id/close_comments', to: 'lectures#close_comments',
+                                     as: 'lecture_close_comments'
+  get 'lectures/:id/open_comments', to: 'lectures#open_comments',
+                                     as: 'lecture_open_comments'
 
   resources :lectures, except: [:index]
 
@@ -144,12 +167,16 @@ Rails.application.routes.draw do
                         as: 'play_medium'
   get 'media/:id/display', to: 'media#display',
                            as: 'display_medium'
+  get 'media/:id/geogebra', to: 'media#geogebra',
+                            as: 'geogebra_medium'
   get 'media/:id/add_item', to: 'media#add_item',
                             as: 'add_item'
   get 'media/:id/add_reference', to: 'media#add_reference',
                                  as: 'add_reference'
   get 'media/:id/export_toc', to: 'media#export_toc',
                               as: 'export_toc'
+  get 'media/:id/import_script_items', to: 'media#import_script_items',
+                                       as: 'import_script_items'
   get 'media/:id/export_references', to: 'media#export_references',
                                      as: 'export_references'
   get 'media/:id/export_screenshot', to: 'media#export_screenshot',
@@ -172,6 +199,8 @@ Rails.application.routes.draw do
                                       as: 'register_download'
   get 'media/:id/get_statistics', to: 'media#get_statistics',
                                   as: 'get_statistics'
+  get 'media/:id/show_comments', to: 'media#show_comments',
+                                 as: 'show_media_comments'
   resources :media
 
   post 'notifications/destroy_all', to: 'notifications#destroy_all',
@@ -189,6 +218,9 @@ Rails.application.routes.draw do
   get 'profile/check_for_consent', as: 'consent_profile'
   patch 'profile/add_consent', as: 'add_consent'
   put 'profile/add_consent'
+  post 'profile/toggle_thread_subscription', as: 'toggle_thread_subscription'
+
+  resources :programs, except: [:show]
 
   patch 'questions/:id/reassign', to: 'questions#reassign',
                                   as: 'reassign_question'
@@ -216,6 +248,12 @@ Rails.application.routes.draw do
     resources :vertices, except: [:index, :show, :edit]
   end
 
+  patch 'readers/update', to: 'readers#update',
+                           as: 'update_reader'
+
+  patch 'readers/update_all', to: 'readers#update_all',
+                              as: 'update_all_readers'
+
   get 'referrals/list_items', to: 'referrals#list_items',
                               as: 'list_items'
   resources :referrals, only: [:update, :create, :edit, :destroy]
@@ -223,6 +261,8 @@ Rails.application.routes.draw do
   patch 'remarks/:id/reassign', to: 'remarks#reassign',
                                 as: 'reassign_remark'
   resources :remarks, only: [:edit, :update]
+
+  resources :subjects, except: [:show]
 
   get 'tags/modal', to: 'tags#modal',
                     as: 'tag_modal'
@@ -253,6 +293,8 @@ Rails.application.routes.draw do
 
   get 'terms/cancel_term_edit', to: 'terms#cancel',
                                 as: 'cancel_term_edit'
+  post 'terms/set_active_term', to: 'terms#set_active',
+                                as: 'set_active_term'
   resources :terms, except: [:show]
 
   devise_for :users, controllers: { confirmations: 'confirmations',
@@ -268,19 +310,42 @@ Rails.application.routes.draw do
                               as: 'fill_user_select'
   resources :users, only: [:index, :edit, :update, :destroy]
 
-  resources :votes, only: :create
+  get 'examples/:id', to: 'erdbeere#show_example',
+                      as: 'erdbeere_example'
+  post 'examples/find', to: 'erdbeere#find_example'
+  get 'properties/:id', to: 'erdbeere#show_property',
+                        as: 'erdbeere_property'
+  get 'structures/:id', to: 'erdbeere#show_structure',
+                        as: 'erdbeere_structure'
+  get 'find_erdbeere_tags', to: 'erdbeere#find_tags',
+                            as: 'find_erdbeere_tags'
+  post 'update_erdbeere_tags', to: 'erdbeere#update_tags',
+                            as: 'update_erdbeere_tags'
+  get 'edit_erdbeere_tags', to: 'erdbeere#edit_tags',
+                            as: 'edit_erdbeere_tags'
+  get 'cancel_edit_erdbeere_tags', to: 'erdbeere#cancel_edit_tags',
+                            as: 'cancel_edit_erdbeere_tags'
+  get 'display_erdbeere_info', to: 'erdbeere#display_info',
+                            as: 'display_erdbeere_info'
+  get 'fill_realizations_select', to: 'erdbeere#fill_realizations_select',
+                                  as: 'fill_realizations_select'
 
   root 'main#home'
   get 'error', to: 'main#error'
   get 'main/home'
   get 'main/news', to: 'main#news',
                    as: 'news'
+  get 'main/comments', to: 'main#comments',
+                       as: 'comments'
   get 'main/sponsors', to: 'main#sponsors',
                        as: 'sponsors'
+  get 'main/start', to: 'main#start',
+                    as: 'start'
 
   mount ScreenshotUploader.upload_endpoint(:cache) => "/screenshots/upload"
   mount VideoUploader.upload_endpoint(:cache) => "/videos/upload"
   mount PdfUploader.upload_endpoint(:cache) => "/pdfs/upload"
+  mount GeogebraUploader.upload_endpoint(:cache) => "/ggbs/upload"
   mount Thredded::Engine => '/forum'
   get '*path', to: 'main#error'
 

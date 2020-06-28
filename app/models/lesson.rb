@@ -15,7 +15,8 @@ class Lesson < ApplicationRecord
            after_add: :touch_section
 
   # being a teachable (course/lecture/lesson), a lesson has associated media
-  has_many :media, as: :teachable
+  has_many :media, -> { order(position: :asc) },
+           as: :teachable
 
   validates :date, presence: true
   validates :sections, presence: true
@@ -131,11 +132,12 @@ class Lesson < ApplicationRecord
   end
 
   def previous
-    lecture.lessons.find { |l| l.number == number - 1 }
+    return unless number > 1
+    lecture.lessons[number - 2]
   end
 
   def next
-    lecture.lessons.find { |l| l.number == number + 1 }
+    lecture.lessons[number]
   end
 
   def published_media
@@ -153,8 +155,8 @@ class Lesson < ApplicationRecord
 
   # the number of a lesson is calculated by its date relative to the other
   # lessons
-  def number(all_lessons: lecture.lessons)
-    all_lessons.order(:date, :id).pluck(:id).index(id) + 1
+  def number
+    lecture.lessons.index(self) + 1
   end
 
   def date_localized
@@ -171,7 +173,7 @@ class Lesson < ApplicationRecord
   end
 
   def section_tags
-    sections.collect(&:ordered_tags).flatten
+    sections.collect(&:tags).flatten
   end
 
   def complement_of_section_tags
@@ -198,6 +200,11 @@ class Lesson < ApplicationRecord
     ([details] + media.potentially_visible.map(&:content)).compact - ['']
   end
 
+  def singular_medium
+    return false if media.count != 1
+    media.first
+  end
+
   # script items are items in the manuscript between start end end destination
   # (relevant if lecture content mode is manuscript)
   def script_items
@@ -209,9 +216,13 @@ class Lesson < ApplicationRecord
     return [] unless start_item && end_item
     range = (start_item.position..end_item.position).to_a
     return [] unless range.present?
+    hidden_chapters = Chapter.where(hidden: true)
+    hidden_sections = Section.where(hidden: true)
+                             .or(Section.where(chapter: hidden_chapters))
     Item.where(medium: lecture.manuscript,
                position: range,
                hidden: [false, nil])
+        .where.not(section: hidden_sections)
         .unquarantined.order(:position)
   end
 

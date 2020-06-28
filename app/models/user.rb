@@ -54,6 +54,9 @@ class User < ApplicationRecord
   # add timestamp for DSGVO consent
   after_create :set_consented_at
 
+  # users can comment stuff
+  acts_as_commontator
+
   # returns the array of all teachers
   def self.teachers
     User.where(id: Lecture.pluck(:teacher_id).uniq)
@@ -92,12 +95,13 @@ class User < ApplicationRecord
   #   (if subscription type is 1)
   # - all courses (if subscription type is 2)
   # - all courses that the user has subscribed to (if subscription type is 3)
-  def related_courses
+  def related_courses(overrule_subscription_type: false)
     return if subscription_type.nil?
-    if subscription_type == 1
+    selection_type = overrule_subscription_type || subscription_type
+    if selection_type == 1
       return Course.where(id: preceding_course_ids).includes(:lectures)
     end
-    return Course.all.includes(:lectures) if subscription_type == 2
+    return Course.all.includes(:lectures) if selection_type == 2
     courses
   end
 
@@ -161,14 +165,18 @@ class User < ApplicationRecord
     lectures.map(&:tags).flatten.uniq
   end
 
-  def visible_tags
-    related_courses.map(&:lectures).flatten.map(&:tags).flatten.uniq
+  def visible_tags(overrule_subscription_type: false)
+    related_courses(overrule_subscription_type: overrule_subscription_type)
+      .map(&:lectures).flatten.map(&:tags).flatten.uniq
   end
 
   # returns the array of those notifications of the user that are announcements
   # in the given lecture
-  def active_announcements(lecture)
+  def active_notifications(lecture)
     notifications.where(notifiable: lecture.announcements)
+                 .includes(notifiable: :announcer)
+                 .sort_by { |n| n.notifiable.created_at }
+                 .reverse
   end
 
   # returns the array of those notifications that are related to MaMpf news
@@ -181,7 +189,7 @@ class User < ApplicationRecord
   # returns the unique user notification that corresponds to the given
   # announcement
   def matching_notification(announcement)
-    notifications.find { |n| n.notifiable == announcement }
+    notifications.find_by(notifiable: announcement)
   end
 
   # a user is a teacher iff he/she has given any lecture
@@ -250,7 +258,7 @@ class User < ApplicationRecord
   # lectures as module editor are all lectures that belong to an edited course
   # but are neither edited lectures nor given lectures
   def lectures_as_module_editor
-    edited_courses.map(&:lectures).flatten - edited_lectures.to_a -
+    Lecture.where(course: edited_courses) - edited_lectures.to_a -
       given_lectures.to_a
   end
 
@@ -355,6 +363,49 @@ class User < ApplicationRecord
       .or(media.where(teachable: edited_courses))
       .or(media.where(teachable: teaching_related_lectures))
       .or(media.where(teachable: edited_lessons))
+  end
+
+  def subscribed_commentable_media_with_comments
+    lessons = Lesson.where(lecture: lectures)
+    filter_media(Medium.where.not(sort: ['RandomQuiz', 'Question', 'Erdbeere',
+                                         'Remark'])
+                       .where(teachable: courses + lectures + lessons))
+      .includes(commontator_thread: :comments)
+      .select { |m| m.commontator_thread.comments.any? }
+  end
+
+  def media_latest_comments
+    subscribed_commentable_media_with_comments
+      .map { |m| { medium: m,
+                   thread: m.commontator_thread,
+                   latest_comment: m.commontator_thread
+                                    .comments.sort_by(&:created_at)
+                                    .last } }
+      .sort_by { |x| x[:latest_comment].created_at }.reverse
+  end
+
+  # lecture that are in the acive term
+  def active_lectures
+    lectures.where(term: Term.active).includes(:course, :term)
+  end
+
+  def inactive_lectures
+    lectures.where.not(term: Term.active)
+  end
+
+  def courses_without_lectures
+    Course.where(id: CourseUserJoin.where(user: self,
+                                          course: courses,
+                                          primary_lecture_id: nil)
+                                   .pluck(:course_id))
+  end
+
+  def nonsubscribed_lectures
+    Lecture.where.not(id: lectures.pluck(:id))
+  end
+
+  def anonymized_id
+    Digest::SHA2.hexdigest(id.to_s + created_at.to_s).first(20)
   end
 
   private

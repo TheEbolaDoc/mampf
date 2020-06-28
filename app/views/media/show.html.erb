@@ -15,9 +15,19 @@
         </span>
       <% end %>
       <%= @medium.caption %>
+      <% if current_user.admin ||
+            @medium.edited_with_inheritance_by?(current_user) %>
+        <%= link_to '',
+                    edit_medium_path(@medium),
+                    class: 'far fa-edit fa-sm text-dark',
+                    data: { toggle: 'tooltip',
+                            placement: 'bottom' },
+                    title: t('buttons.edit'),
+                    style: 'text-decoration: none;' %>
+      <% end %>
     </h2>
   </div>
-  <div class="col-4 pt-2">
+  <div class="col-4 col-xl-6 pt-2">
     <strong>
       <%= t('from') %>:
     </strong>
@@ -59,18 +69,6 @@
       <% end %>
     <% end %>
   </div>
-  <div class="col-12 col-xl-2 text-right">
-    <% if current_user.admin ||
-          @medium.edited_with_inheritance_by?(current_user) %>
-      <%= link_to '',
-                  edit_medium_path(@medium),
-                  class: 'far fa-edit fa-lg text-secondary',
-                  data: { toggle: 'tooltip',
-                          placement: 'bottom' },
-                  title: t('buttons.edit'),
-                  style: 'text-decoration: none;' %>
-    <% end %>
-  </div>
 </div>
 <div class="row mb-2">
   <div class="col-12 col-lg-4 col-xl-3 col-xxl-2">
@@ -84,6 +82,12 @@
       <% if @medium.manuscript.present? %>
         <div class="col-6 col-lg-12 mb-2">
           <%= render partial: 'media/manuscript_card',
+                     locals: { medium: @medium } %>
+        </div>
+      <% end %>
+      <% if @medium.geogebra.present? %>
+        <div class="col-6 col-lg-12 mb-2">
+          <%= render partial: 'media/geogebra_card',
                      locals: { medium: @medium } %>
         </div>
       <% end %>
@@ -111,7 +115,7 @@
                                small: true} %>
         </div>
       <% end %>
-      <div class="col-12">
+      <div class="col-12 mb-2">
         <% if @medium.sort == 'Script' %>
           <%= render partial: 'items/items',
                      locals: { items: @medium.toc_items,
@@ -123,10 +127,15 @@
           <%= render partial: 'items/items',
                      locals: { items: @medium.proper_items_by_time,
                                small: true,
+                               comments_below: true,
                                embedded: false,
                                section_links: false,
                                content: @medium.extended_content } %>
         <% end %>
+      </div>
+      <div class="col-12">
+        <%= render partial: 'media/comments/comments',
+                   locals: { medium: @medium } %>
       </div>
     </div>
   </div>

@@ -40,12 +40,11 @@ class LessonsController < ApplicationController
     @lesson.update(lesson_params)
     @errors = @lesson.errors
     return unless @errors.blank?
+    update_media_order if params[:lesson][:media_order]
     @tags_without_section = @lesson.tags_without_section
     return unless @lesson.sections.count == 1 && @tags_without_section.any?
     section = @lesson.sections.first
     section.tags << @tags_without_section
-    section.update(tags_order: section.tags_order +
-                                 @tags_without_section.map(&:id))
   end
 
   def destroy
@@ -84,5 +83,17 @@ class LessonsController < ApplicationController
                                    :end_destination, :details,
                                    section_ids: [],
                                    tag_ids: [])
+  end
+
+  def update_media_order
+    media_order_from_json = JSON.parse(params[:lesson][:media_order])
+    return unless media_order_from_json.is_a?(Array)
+    media_order = media_order_from_json.map(&:to_i) - [0]
+    return unless media_order.sort == @lesson.media.pluck(:id).sort
+    Medium.acts_as_list_no_update do
+      @lesson.media.each do |m|
+        m.update(position: media_order.index(m.id))
+      end
+    end
   end
 end

@@ -14,12 +14,13 @@ class Lecture < ApplicationRecord
   has_many :chapters, -> { order(position: :asc) }, dependent: :destroy
 
   # during the term, a lot of lessons take place for this lecture
-  has_many :lessons, dependent: :destroy,
+  has_many :lessons, -> { order(date: :asc, id: :asc) },
+                     dependent: :destroy,
                      after_add: :touch_siblings,
                      after_remove: :touch_siblings
 
   # being a teachable (course/lecture/lesson), a lecture has associated media
-  has_many :media, as: :teachable
+  has_many :media, -> { order(position: :asc) }, as: :teachable
 
   # in a lecture, you can import other media
   has_many :imports, as: :teachable, dependent: :destroy
@@ -39,6 +40,10 @@ class Lecture < ApplicationRecord
   # a lecture has many announcements
   has_many :announcements, dependent: :destroy
 
+  # a lecture has many structure_ids, referring to the ids of structures
+  # in the erdbeere database
+  serialize :structure_ids, Array
+
   # we do not allow that a teacher gives a certain lecture in a given term
   # of the same sort twice
   validates :course, uniqueness: { scope: [:teacher_id, :term_id, :sort] }
@@ -55,6 +60,10 @@ class Lecture < ApplicationRecord
   after_save :touch_lessons
   after_save :touch_chapters
   after_save :touch_sections
+
+  # if the lecture is destroyed, its forum (if existent) should be destroyed
+  # as well
+  before_destroy :destroy_forum
 
   # scopes for published lectures
   scope :published, -> { where.not(released: nil) }
@@ -183,11 +192,15 @@ class Lecture < ApplicationRecord
   #   and items in quarantine
   def script_items_by_position
     return [] unless manuscript
+    hidden_chapters = Chapter.where(hidden: true)
+    hidden_sections = Section.where(hidden: true)
+                             .or(Section.where(chapter: hidden_chapters))
     Item.where(medium: lecture.manuscript)
         .where.not(sort: 'self')
         .content
         .unquarantined
         .unhidden
+        .where.not(section: hidden_sections)
         .order(:position)
   end
 
@@ -463,7 +476,8 @@ class Lecture < ApplicationRecord
                                             Lesson.where(lecture: self))
     lecture_results + lesson_results.includes(:teachable)
                                     .sort_by { |m| [m.lesson.date,
-                                                    m.lesson.id] }
+                                                    m.lesson.id,
+                                                    m.position] }
   end
 
   def begin_date
@@ -497,7 +511,7 @@ class Lecture < ApplicationRecord
       Thredded::MessageboardGroupView.grouped(forum_relation,
                                               user: user,
                                               with_unread_topics_counts: true)
-    forum_view.first.messageboards.first.unread_topics_count
+    forum_view&.first&.messageboards&.first&.unread_topics_count.to_i
   end
 
   # as there is no show action for lessons, this is the path to the show action
@@ -505,12 +519,6 @@ class Lecture < ApplicationRecord
   def lecture_path
     Rails.application.routes.url_helpers
          .lecture_path(self)
-  end
-
-  def active_announcements(user)
-    announcements.includes(:announcer)
-                .where(id: user.notifications.where(notifiable: announcements)
-                .pluck(:notifiable_id))
   end
 
   def self.sorts
@@ -529,6 +537,25 @@ class Lecture < ApplicationRecord
   def chapter_name
     return 'chapter' unless seminar?
     'talk'
+  end
+
+  def comments_closed?
+    media_with_inheritance.map(&:commontator_thread).map(&:is_closed?).all?
+  end
+
+  def close_comments!(user)
+    media_with_inheritance.each do |m|
+      m.commontator_thread.close(user)
+    end
+  end
+
+  def open_comments!(user)
+    media_with_inheritance.select { |m| m.commontator_thread.is_closed?}
+                          .each { |m| m.commontator_thread.reopen }
+  end
+
+  def self.in_current_term
+    Lecture.where(term: Term.active)
   end
 
   private
@@ -606,5 +633,10 @@ class Lecture < ApplicationRecord
 
   def touch_sections
     Section.where(chapter: chapters).update_all(updated_at: Time.now)
+  end
+
+  def destroy_forum
+    return unless forum
+    forum.destroy
   end
 end

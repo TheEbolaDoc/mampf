@@ -14,7 +14,8 @@ class Section < ApplicationRecord
 
   # a section has many lessons
   has_many :lesson_section_joins, dependent: :destroy
-  has_many :lessons, through: :lesson_section_joins
+  has_many :lessons, -> { order(date: :asc, id: :asc) },
+                     through: :lesson_section_joins
 
   # a section needs to have a title
   validates :title, presence: true
@@ -84,13 +85,6 @@ class Section < ApplicationRecord
    # visible media are published with inheritance and unlocked
   def visible_media_for_user(user)
     media.select { |m| m.visible_for_user?(user) }
-  end
-
-  # reorders the tags as given by the order in tags_order
-  # returns an array
-  def ordered_tags
-    return tags.to_a unless tag_ids.sort == tags_order.sort
-    tags.index_by(&:id).values_at(*tags_order)
   end
 
   def visible_for_user?(user)

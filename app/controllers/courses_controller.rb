@@ -61,6 +61,8 @@ class CoursesController < ApplicationController
       cookies[:current_lecture] = @lecture.id
       I18n.locale = @lecture.locale_with_inheritance || I18n.default_locale
       @lecture = @course.primary_lecture(current_user, eagerload: true)
+      @notifications = current_user.active_notifications(@lecture)
+      @new_topics_count = @lecture.unread_forum_topics_count(current_user) || 0
       render template: 'lectures/show', layout: 'application'
     end
   end
@@ -92,8 +94,8 @@ class CoursesController < ApplicationController
   end
 
   def take_random_quiz
-    tags = Tag.where(id: tag_params[:tag_ids])
-    random_quiz = @course.create_random_quiz!(tags, tag_params[:count].to_i)
+    tags = Tag.where(id: random_quiz_params[:search_tag_ids])
+    random_quiz = @course.create_random_quiz!(tags, random_quiz_params[:random_quiz_count].to_i)
     redirect_to take_quiz_path(random_quiz)
   end
 
@@ -157,11 +159,17 @@ class CoursesController < ApplicationController
                                    :organizational_concept, :locale,
                                    tag_ids: [],
                                    preceding_course_ids: [],
-                                   editor_ids: [])
+                                   editor_ids: [],
+                                   division_ids: [])
   end
 
   def tag_params
     params.permit(:count, tag_ids: [])
+  end
+
+  def random_quiz_params
+    params.require(:quiz).permit(:random_quiz_count,
+                                 search_tag_ids: [])
   end
 
   # create notifications to all users about creation of new course

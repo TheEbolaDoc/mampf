@@ -20,7 +20,8 @@ class Ability
       # :read is a cancancan alias for index and show actions
       can [:read, :inspect], :all
       cannot :index, Announcement
-      can :manage, [:administration, Item, Referral]
+      can :manage, [:administration, :erdbeere, Item, Referral]
+      cannot :classification, :administration
       # :create is a cancancan alias for new and create actions
       can :create, [Chapter, Lecture, Lesson, Medium, Section]
       # :update is a cancancan alias for update and edit actions
@@ -38,7 +39,8 @@ class Ability
       end
 
       # anyone should be able to get a sidebar and see the announcements
-      can [:render_sidebar, :organizational, :show_announcements], Lecture
+      can [:render_sidebar, :organizational, :show_announcements,
+           :show_structures, :search_examples], Lecture
 
       can [:display, :show_random_quizzes, :take_random_quiz,
            :render_question_counter], Course
@@ -51,7 +53,8 @@ class Ability
 
       can [:update, :update_teacher, :update_editors, :destroy, :add_forum,
            :publish, :lock_forum, :unlock_forum, :destroy_forum, :import_media,
-           :remove_imported_medium, :show_subscribers],
+           :remove_imported_medium, :show_subscribers,
+           :edit_structures, :close_comments, :open_comments],
           Lecture do |lecture|
         lecture.edited_by?(user)
       end
@@ -64,9 +67,11 @@ class Ability
       end
       can [:modal, :list_sections], Lesson
 
-      can [:catalog, :search, :play, :display, :register_download], Medium
+      can [:catalog, :search, :play, :display, :geogebra,
+           :register_download, :show_comments], Medium
       can [:update, :enrich, :add_item, :add_reference, :add_screenshot,
-           :remove_screenshot, :export_toc, :export_references,
+           :remove_screenshot, :export_toc, :import_script_items,
+           :export_references,
            :export_screenshot, :publish, :destroy,
            :import_manuscript, :fill_teachable_select,
            :fill_media_select, :update_tags, :get_statistics], Medium do |m|
@@ -120,7 +125,7 @@ class Ability
       # guest users can play/display media only when their release status
       # is 'all', logged in users can do that unless the release status is
       # 'locked'
-      can [:play, :display], Medium do |medium|
+      can [:play, :display, :geogebra], Medium do |medium|
         if !user.new_record?
           medium.visible_for_user?(user)
         else
@@ -155,7 +160,8 @@ class Ability
       can [:display_cyto, :fill_course_tags, :take_random_quiz], Tag
       can :teacher, User
       # anyone should be able to get a sidebar and see the announcements
-      can [:render_sidebar, :show_announcements, :organizational], Lecture
+      can [:render_sidebar, :show_announcements, :organizational,
+           :show_structures, :search_examples], Lecture
       cannot [:show_announcements, :organizational], Lecture do |lecture|
         !lecture.in?(user.lectures)
       end
@@ -164,17 +170,25 @@ class Ability
         n.recipient == user
       end
       cannot :show, Medium do |medium|
-        !medium.visible_for_user?(user)
+        !medium.visible_for_user?(user) || medium.sort == 'Question'
       end
+
+      can :show_comments, Medium do |medium|
+        medium.visible_for_user?(user)
+      end
+
       cannot :show, Section do |section|
         !section.visible_for_user?(user)
       end
       cannot :show, Lesson do |lesson|
         !lesson.visible_for_user?(user)
       end
-      cannot :inex, Interaction
+      cannot :index, Interaction
       can [:index, :destroy_all, :destroy_lecture_notifications,
            :destroy_news_notifications], Notification
+
+      can [:show_example, :find_example, :show_property, :show_structure,
+           :find_tags, :display_info], :erdbeere
     end
   end
 end

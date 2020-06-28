@@ -1,6 +1,8 @@
 # LecturesController
 class LecturesController < ApplicationController
+  include ActionController::RequestForgeryProtection
   before_action :set_lecture, except: [:new, :create]
+  before_action :set_erdbeere_data, only: [:show_structures, :edit_structures]
   authorize_resource
   before_action :check_for_consent
   before_action :set_view_locale, only: [:edit, :show, :inspect]
@@ -24,6 +26,11 @@ class LecturesController < ApplicationController
 
   def update
     @lecture.update(lecture_params)
+    if structure_params.present?
+      structure_ids = structure_params.select { |_k, v| v.to_i == 1 }.keys
+                        .map(&:to_i)
+      @lecture.update(structure_ids: structure_ids)
+    end
     @lecture.touch
     @lecture.forum&.update(name: @lecture.forum_title)
     redirect_to edit_lecture_path(@lecture) if @lecture.valid?
@@ -51,6 +58,8 @@ class LecturesController < ApplicationController
                                                         chapter: [:lecture],
                                                         tags: [:notions, :lessons]]])
                         .find_by_id(params[:id])
+      @notifications = current_user.active_notifications(@lecture)
+      @new_topics_count = @lecture.unread_forum_topics_count(current_user) || 0
       render layout: 'application'
     end
   end
@@ -142,6 +151,8 @@ class LecturesController < ApplicationController
   # show all announcements for this lecture
   def show_announcements
     @announcements = @lecture.announcements.order(:created_at).reverse
+    @active_notification_count = current_user.active_notifications(@lecture)
+                                             .size
     I18n.locale = @lecture.locale_with_inheritance
     render layout: 'application'
   end
@@ -175,6 +186,37 @@ class LecturesController < ApplicationController
     render json: user_data
   end
 
+  def show_structures
+    render layout: 'application'
+  end
+
+  def edit_structures
+    render layout: 'application'
+  end
+
+  def search_examples
+    if @lecture.structure_ids.any?
+      response = Faraday.get(ENV['ERDBEERE_API'] + '/search')
+      @form = JSON.parse(response.body)['embedded_html']
+      @form.gsub!('token_placeholder',
+                  '<input type="hidden" name="authenticity_token" ' +
+                  'value="' + form_authenticity_token + '">')
+    else
+      @form = I18n.t('erdbeere.no_structures')
+    end
+    render layout: 'application'
+  end
+
+  def close_comments
+    @lecture.close_comments!(current_user)
+    redirect_to edit_lecture_path(@lecture)
+  end
+
+  def open_comments
+    @lecture.open_comments!(current_user)
+    redirect_to edit_lecture_path(@lecture)
+  end
+
   private
 
   def set_lecture
@@ -198,7 +240,16 @@ class LecturesController < ApplicationController
                                     :start_section, :organizational, :locale,
                                     :organizational_concept, :muesli,
                                     :content_mode, :passphrase, :sort,
+                                    :comments_disabled,
                                     editor_ids: [])
+  end
+
+  def structure_params
+    params.require(:lecture).permit(structures: {})[:structures]
+  end
+
+  def comment_params
+    params.require(:lecture).permit(:close_comments)
   end
 
   # create notifications to all users about creation of new lecture
@@ -265,5 +316,20 @@ class LecturesController < ApplicationController
     @deferred_tags = @lecture.deferred_tags(lecture_tags: lecture_tags)
     @announcements = @lecture.announcements.includes(:announcer).order(:created_at).reverse
     @terms = Term.select_terms
+  end
+
+  def set_erdbeere_data
+    @structure_ids = @lecture.structure_ids
+    response = Faraday.get(ENV['ERDBEERE_API'] + '/structures')
+    response_hash = if response.status == 200
+                       JSON.parse(response.body)
+                     else
+                       { 'data' => {}, 'included' => {} }
+                     end
+    @all_structures = response_hash['data']
+    @structures = @all_structures.select do |s|
+      s['id'].to_i.in?(@structure_ids)
+    end
+    @properties = response_hash['included']
   end
 end

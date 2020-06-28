@@ -68,12 +68,43 @@
                       data: { toggle: 'tooltip' },
                       title: t('admin.navbar.terms') %>
         </li>
+        <li class="nav-item">
+          <%= link_to '',
+                      classification_path,
+                      class: 'fas fa-clipboard-list fa-lg text-light nav-link',
+                      style: 'text-decoration: none;',
+                      data: { toggle: 'tooltip' },
+                      title: t('admin.navbar.classification') %>
+        </li>
         <li>
           <%= link_to '', announcements_path,
                       class: 'far fa-newspaper fa-lg text-light nav-link',
                       style: 'text-decoration: none;',
                       data: { toggle: 'tooltip' },
                       title: t('admin.navbar.news') %>
+        </li>
+        <li>
+          <%= link_to '', thredded_path,
+                      class: 'fas fa-comment-alt fa-lg text-light nav-link',
+                      style: 'text-decoration: none;',
+                      data: { toggle: 'tooltip' },
+                      title: t('admin.navbar.boards'),
+                      target: :_blank %>
+        </li>
+        <li>
+          <%= link_to '', sidekiq_web_path,
+                      class: 'fas fa-chart-line fa-lg text-light nav-link',
+                      style: 'text-decoration: none;',
+                      data: { toggle: 'tooltip' },
+                      title: t('admin.navbar.stats'),
+                      target: :_blank %>
+        </li>
+        <li>
+          <%= link_to '', interactions_path,
+                      class: 'fas fa-download fa-lg text-light nav-link',
+                      style: 'text-decoration: none;',
+                      data: { toggle: 'tooltip' },
+                      title: t('admin.navbar.export_stats') %>
         </li>
       <% end %>
     </ul>

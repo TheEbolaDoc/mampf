@@ -61,6 +61,7 @@ de:
       short: 'DB'
     muesli: 'MÜSLI'
     board: 'Forum'
+    comments: 'Kommentare'
     organizational: 'Organisatorisches'
     announcements: 'Mitteilungen'
     reste:
@@ -77,11 +78,11 @@ de:
     text_html: >
       &copy; MaMpf Team 2019. MaMpf ist auf %{github}.
       Powered by %{rails}, %{bootstrap}, %{cytoscape},
-      %{nerdamer}, %{katex}, %{docker}, %{basecamp}.<br>
+      %{nerdamer}, %{katex}, %{thredded}, %{docker}, %{basecamp}.<br>
       Bugs meldest Du am besten %{bugs}.
       Weiteres Feedback kannst Du gerne auch an %{feedback} schicken.
     sponsors_html: >
-      MaMpf bedankt sich bei seinen %{sponsors}:
+      %{sponsors}:
   sponsors:
     sponsorships: 'Projektförderungen'
     hse: 'Heidelberg School of Education (HSE)'
@@ -129,6 +130,7 @@ de:
     search: 'Suche'
     profile: 'Profil'
     administration: 'Administration'
+    comments: 'Kommentare'
     news: 'News'
     blog: 'Blog'
     logout: 'Logout'
@@ -143,7 +145,11 @@ de:
       media_search: 'Mediensuche'
       tags: 'Tagübersicht'
       terms: 'Semester'
+      classification: 'Systematik'
       news: 'News'
+      boards: 'Foren'
+      stats: 'Zugriffsstatistik'
+      export_stats: 'Statistiken exportieren'
       users: 'Nutzerverwaltung'
       course: 'Modul'
       profile: 'Mein Profil'
@@ -156,6 +162,9 @@ de:
         subscriber_medium: >
           Dieses Medium ist nur für AbonnentInnen der entsprechenden
           Lehrveranstaltung zugänglich.
+    classification:
+      programs: 'Studiengänge'
+      divisions: 'Teilbereiche'
     main:
       my_lectures: 'Meine Veranstaltungen'
       type: 'Typ'
@@ -324,7 +333,10 @@ de:
         unveröffentlichte verknüpfte Medien weiterhin unveröffentlicht
         bleiben.
       import_media: 'Medien importieren'
+      close_comments: 'Kommentare für alle zugehörigen Medien deaktivieren'
       no_imported_media: 'Es sind keine importierten Medien vorhanden.'
+      comments_disabled: >
+        Kommentare für neu veröffentlichte Medien sind standardmäßig deaktiviert
       info:
         course: >
           Hier kannst Du das Modul auswählen, zu dem diese
@@ -357,7 +369,7 @@ de:
           Möglichkeit 2:
           Zunächst legt man die Kapitel (bzw. Vorträge) und Abschnitte an.
           Danach legt man die Sitzungen an und in den Sitzungen die Medien.
-          Die Medien taggt man, die Tags werden dann nach oben wererbt.
+          Die Medien taggt man, die Tags werden dann nach oben vererbt.
           </li>
           <li>
           <i>
@@ -493,6 +505,13 @@ de:
           gestellt sind. Die Zugriffsrechte werden hierbei zur Laufzeit ermittelt, d.h. das Medium wird
           sichtbar, sobald die Zugriffsrechte auf einen der beiden für importierte Medien zulässigen Werte
           geändert werden.
+        close_comments: >
+          Wenn du dieses Feld aktivierst, werden alle Diskussionen zu Medien,
+          die zu dieser Veranstaltung oder ihren Sitzungen gehören, geschlossen.
+        comments_disabled: >
+          Standardmäßig sind Kommentare für neu veröffentlichte Medien erlaubt,
+          Du kannst bei der Veröffentlichung aber Kommentare deaktivieren.
+          Hier kannst Du dises Verhaltenb umdrehen.
       show_media: 'Medien einblenden'
       workflow: 'Workflow'
       content_mode: 'Inhaltsermittlung'
@@ -560,6 +579,8 @@ de:
       no_lectures: 'Für diesen Kurs gibt es noch keine Veranstaltungen.'
       additional_information: 'Weitere Informationen'
       additional_information_visible: 'Weitere Informationen sichtbar'
+      programs: 'Studiengänge'
+      divisions: 'Teilbereiche'
       info:
         title: >
           Hier musst Du den Titel des Moduls eintragen.
@@ -606,6 +627,12 @@ de:
           insofern relevant, als dass Nutzer in ihren Profileinstellungen
           festlegen können, ob ihnen verknüpfte Materialien auch von inhaltlich
           vorher einzuordnenden Modulen angezeigt werden sollen.
+        divisions: >
+          Hier kannst Du angeben, zu welchen Teilbereichen welcher Fächer
+          dieses Modul gehört.
+        programs: >
+          Hier kannst Du angeben, zu welchen Studiengängen welcher Fächer
+          dieses Modul gehört.
     chapter:
       edit: '%{chapter} bearbeiten'
       position: 'Positionierung nach %{chapter_name}'
@@ -744,7 +771,7 @@ de:
         Rot eingefärbte Medien sind noch nicht veröffentlicht oder gesperrt.
       sort: 'Typ'
       edited_by: 'editiert von %{editors}'
-      publish: 'Publish Medium'
+      publish: 'Medium Veröffentlichen'
       media_search: 'Mediensuche'
       create: 'Medium anlegen'
       edit: 'Medium bearbeiten'
@@ -767,6 +794,11 @@ de:
         <p>Inhaltsbeschreibung der dazugehörigen Sitzung:</p>
       extracted_content: >
         Extrahierter Inhalt
+      disclaimer: >
+        Ich bestätige hiermit, dass durch die Veröffentlichung des
+        Mediums auf der MaMpf-Plattform keine Rechte Dritter verletzt werden.
+      lock_comments: Kommentare für dieses Medium deaktivieren
+      comments_locked: Kommentare deaktiviert
       info:
         locked: >
           Dieses Medium wurde gesperrt. Du kannst es unter
@@ -921,7 +953,7 @@ de:
           Tags, die Du diesem Medium hinzufügst, werden auch der Sitzung
           hinzugefügt.
         content: >
-          Hier hast Du die Mögflichkeit, eine Inhaltsangabe machen. Du kannst LaTEX benutzen
+          Hier hast Du die Möglichkeit, eine Inhaltsangabe machen. Du kannst LaTEX benutzen
           (indem du den Ausdruck in $...$ setzt). Eine Vorschau Deines Textes
           siehst Du unten.
         linked_media: >
@@ -977,6 +1009,11 @@ de:
           bestmöglich ausgenutzt wird, sofern ein 16:9 Monitor verwendet wird.
         manuscript: >
           Das Manuskript sollte im pdf-Format vorliegen.
+        geogebra: >
+          Das Geogebra-Applet sollte im ggb-Format vorliegen. Die Auflösung
+          ist idealerweise 500x700 Pixel, für einen erläuternden Text
+          (einschließlich LaTeX) kann in die Inhaltsbeschreibnung des Mediums
+          verwendet werden.
         manuscript_structure: >
           Das ist die aus dem pdf extrahierte Struktur
           des Manuskripts. Du kannst Kapitel, Abschnitte und Einträge in
@@ -984,14 +1021,14 @@ de:
         import_warning: >
           Achtung: Die Struktur des Manuskripts wurde noch nicht übernommen.
         search_type: >
-          Hier kannst Du (im Sinne von
+          Hier musst Du (im Sinne von
           <i>
           ODER
           </i>
           ) auswählen,
-          was der Typ des Mediums sein soll.
+          was der Typ des Mediums sein soll. Andernfalls wird die Suche ergebnislos sein.
         search_teachable: >
-          Hier kannst Du (im Sinne von
+          Hier musst Du (im Sinne von
           <i>
           ODER
           </i>
@@ -1039,13 +1076,21 @@ de:
         extracted_content: >
           Hier steht der Inhalt, der aus den assoziierten Dokumenten
           extrahiert wurde (z.B. aus Inhaltsverzeichnissen von Videos,
-          die mit dem THymE-Editor bearebitet wurden).
+          die mit dem THymE-Editor bearbeitet wurden).
+        details_warning: >
+          Es wurden Details geändert, die noch nicht übernommen wurden.
     tag:
       index: 'Tagübersicht'
       related_tags: 'Verknüpfte Tags'
       extra_lectures: 'Zusätzliche Veranstaltungen'
       missing_lectures: 'Fehlende Veranstaltungen'
       create: 'Tag anlegen'
+      visibility: 'Sichtbarkeit: Tags'
+      previous_courses: >
+        aus allen abonnierten und inhaltlich vorangehenden Modulen
+      subscribed_courses: 'aus allen abonnierten Modulen'
+      all_courses: 'aus allen Modulen'
+      depth: 'Tiefe'
       identify: 'Tag identifizieren'
       identified_tag: 'zu identifizierender Tag'
       identified_titles: 'Titel des identifizierten Tags'
@@ -1099,6 +1144,7 @@ de:
           dann eine Verknüpfung mit diesen Tags.
     term:
       index: 'Semesterübersicht'
+      active_term: 'aktuelles Semester'
     item:
       safe_delete_from_quarantine: >
         Der Eintrag wird von nirgendwo referenziert. Du kannst ihn also
@@ -1228,6 +1274,7 @@ de:
       take_time: 'Zeit aus Video übernehmen'
       external_references: 'Externe Referenzen'
       external_all: 'extern (alle)'
+      additional_medium: 'zusätzliches Medium'
       info:
         start_time: >
           Hier kannst Du die Zeit eingeben, an der die
@@ -1280,6 +1327,8 @@ de:
         media: >
           Hier wird Dir angezeigt, in welchen Medienformen
           der zu referenzierende Eintrag vorliegt.
+        additional_medium:
+          Der Eintrag ist mit zusätzlichen Medien verknüpft.
         explanation: >
           Hier kannst Du den zu referenzierenden Eintrag noch
           mit einer (optionalen) zusätzlichen Beschreibung versehen.
@@ -1470,7 +1519,20 @@ de:
       edit: 'Bemerkung bearbeiten'
       initial_text: 'Dummytext'
       copy_marker: '-KOPIE-'
+      text_input: Texteingabefeld aktiv
+      input: 'Eingabe'
+      preview: 'Vorschau'
+      documents: 'Zu dieser Erläuterung gibt es die folgenden Dokumente:'
       info:
+        preview: >
+          <i>
+          Hinweis.
+          </i>
+          Du kannst LaTeX benutzen, indem Du den LaTeX-Code
+          zwischen Dollarzeichen schreibst (bzw. doppelte Dollarzeichen für
+          abgesetzte Inhalte). Eine Liste der unterstützten Symbole gibt es
+          <a href="https://katex.org/docs/supported.html" target="_blank">
+          hier</a>.
         about: >
           Eine Bemerkung korrespondiert zu einem Passus im Quiz,
           in dem man der NutzerIn Dinge erklärt, Sachverhalte einordnet oder
@@ -1506,6 +1568,8 @@ de:
       video_info: 'Erklärvideo im THymE-Player'
       manuscript: 'Manuskript'
       manuscript_info: 'Manuskript als pdf'
+      geogebra: 'Geogebra-Applet'
+      geogebra_info: 'Geogebra-Applet in neuem Tab'
       medium_for_remark_html: >
         Es gibt ein %{medium} zu dieser Erläuterung.
       media_for_remark_html: >
@@ -1597,6 +1661,24 @@ de:
           Für diejenigen, für die du diese Rechte besitzt, werden die
           Zugriffsrechte für die NutzerInnen genauso gesetzt wie beim Quiz
           ausgewählt.
+    subject:
+      edit: 'Fach bearbeiten'
+      name: 'Bezeichnung'
+      new: 'Fach anlegen'
+    program:
+      edit: 'Studiengang bearbeiten'
+      name: 'Bezeichnung'
+      new: 'Studiengang anlegen'
+    division:
+      edit: 'Teilbereich bearbeiten'
+      name: 'Bezeichnung'
+      new: 'Teilbereich anlegen'
+      no_courses: 'In diesem Teilbereich gibt es noch keine Module.'
+    interaction:
+      export_interactions: Interaktionen exportieren
+      export_probes: Quizdaten exportieren
+      start: Startdatum
+      end: Enddatum
   profile:
     account: 'Account'
     name: 'Anzeigename'
@@ -1649,6 +1731,7 @@ de:
   notifications:
     title: 'Neue Benachrichtigungen'
     check_notifications: 'alle erledigen'
+    check: 'erledigen'
     new_medium_in: 'Neues Medium in '
     new_medium: 'Neues Medium angelegt:'
     new_announcement: 'Neue Mitteilung:'
@@ -1701,7 +1784,7 @@ de:
   no_related_tags: 'Es liegen keine verknüpften Begriffe vor.'
   tags_in_neighbourhood: 'im weiteren Umfeld'
   related_lessons: 'Verknüpfte Sitzungen'
-  no_related_lessons: 'Es sind keine verknüpften Sizungen vorhanden.'
+  no_related_lessons: 'Es sind keine verknüpften Sitzungen vorhanden.'
   related_media: 'Verknüpfte Medien'
   related_questions: 'Verknüpfte Fragen'
   no_related_media: 'Es sind keine verknüpften Medien vorhanden.'
@@ -1741,6 +1824,7 @@ de:
   manuscript:
     manuscript: 'Manuskript'
     view: 'pdf im Browser betrachten'
+    view_script: 'Skript im Browser betrachten'
     download: 'Manuskript herunterladen'
     length: 'Länge'
     size: 'Größe'
@@ -1800,6 +1884,16 @@ de:
         sind. Es handelt sich hierbei um Items, die an anderen Stellen
         referenziert werden und zu diesem Manuskript gehören, aber in der
         vorliegenden pdf-Datei nicht mehr vorkommen.
+  geogebra:
+    geogebra: Geogebra-Applet
+    download: Applet herunterladen
+    app_name: Applet-Typ
+    view: Geogebra-Applet im Browser ansehen
+    size: Größe
+    attribution_html: >
+      Dieses Applet wurde mit %{geogebra_link} erstellt, die obige Animation
+      verwendet die GeoGebra JavaScript API.
+      Copyright © International GeoGebra Institute, 2013
   quiz:
     quiz: 'Quiz'
     start: 'Quiz beginnen'
@@ -1993,6 +2087,8 @@ de:
     interested_html:
       Neugierig geworden? Auf unserem %{blog} und auf %{researchgate} findest du weitere Informationen über
       und Neuigkeiten zu MaMpf. %{guided_tour} findest Du eine geführte Tour durch MaMpf.
+      Außerdem gelangst Du auf diesem %{resources} zu Ressourcen für EditorInnen (z.B. zum MaMpf-LaTeX-Paket).
+    resources: Weg
     blog: Blog
     researchgate: Researchgate
   math:
@@ -2042,6 +2138,15 @@ de:
       nicht als 3,000
       </li>
       </ul>
+  comments:
+    title: Neue Kommentare zu Medien aus Deinen Veranstaltungen bzw. Modulen
+    latest_post: Neuster Beitrag
+    thread_subscribed: Abo
+    who_and_when: vor %{when} von %{who}
+    comment_verb: Kommentieren
+    media_comments: >
+      Anzahl der Medien in von den von Dir abonnierten
+      Veranstaltungen bzw. Modulen, in denen es neue Kommentare gibt:
   locales:
     en: 'englisch'
     de: 'deutsch'
@@ -2088,6 +2193,22 @@ de:
     number_of_users: 'Anzahl der Nutzerinnen'
     number_of_correct_answers: >
       Anzahl der korrekt beantworteten Fragen
+  erdbeere:
+    show_structures: Strukturen, Eigenschaften und Beispiele
+    select_structures: Strukturen auswählen
+    info:
+      structures:
+        Hier kannst Du wählen, welche Strukturen aus der ErDBeere-Datenbank
+        für diese Vorlesung angezeigt werden sollen.
+    structures: 'Strukturen'
+    structure_index: 'zur Strukturenübersicht'
+    properties: 'Eigenschaften'
+    edit_realizations: 'Realisierungen bearbeiten'
+    no_realizations: 'Es sind keine Realisierungen vorhanden.'
+    search_examples: 'Beispiele suchen'
+    no_structures: >
+      Zu dieser Vorlesung sind keine Strukturen aus der Beispieldatenbank
+      assoziiert.
   basics:
     course: 'Modul'
     courses: 'Module'
@@ -2211,11 +2332,16 @@ de:
     parametrized: 'parametrisiert'
     synonyms: 'Synonyme'
     status: 'Status'
-    sponsors: 'Sponsoren'
+    sponsors: 'Gefördert durch'
     since: 'seit'
     documents: 'Dokumente'
     optional: 'optional'
     statistics: 'Statistik'
+    loading_data: 'Lade Daten...'
+    realizations: 'Realisierungen'
+    comments: 'Kommentare'
+    comment: 'Kommentar'
+    comments_for: 'Kommentare für %{subject}'
   access:
     unpublished: 'unveröffentlicht'
     all: 'frei'
@@ -2227,7 +2353,7 @@ de:
   buttons:
     save: 'Speichern'
     save_and_exit: 'Speichern und zurück'
-    save_and_edit: 'Speichern und Bearbeiten'
+    save_and_edit: 'Speichern und bearbeiten'
     cancel: 'Abbrechen'
     delete: 'Löschen'
     publish: 'Veröffentlichen'
@@ -2242,6 +2368,9 @@ de:
     create_medium: 'Medium anlegen'
     create_announcement: 'Mitteilung anlegen'
     create_lecture: 'Veranstaltung anlegen'
+    create_program: 'Studiengang anlegen'
+    create_subject: 'Fach anlegen'
+    create_division: 'Teilbereich anlegen'
     edit: 'Bearbeiten'
     content: 'Inhalt'
     hide_media: 'Medien ausblenden'
@@ -2294,6 +2423,9 @@ de:
     interpret: 'Interpretieren'
     import_media: 'Medien importieren'
     view: 'Ansehen'
+    import_script_items: 'Inhaltsverzeichnis aus Skript übernehmen'
+    close_comments: 'Diskussionen für alle Medien schließen'
+    open_comments: 'Geschlossene Diskussionen alle wieder öffnen'
   warnings:
     save_before: >
       Du musst zunächst die anderen Änderungen speichern oder verwerfen.
@@ -2330,6 +2462,10 @@ de:
       Bist Du sicher? Die dazugehörigen Sitzungen werden nicht gelöscht,
       sondern werden - bis Du eine andere Abschnittszuordnung vornimmst -
       als "verwaist" geführt.
+    active_term: >
+      Bist Du sicher? Damit wird sich für alle NutzerInnen die Startseite
+      ändern, da die aktuellen Vorlesungen über das aktuelle Semester bestimmt
+      werden.
   privacy_html: >
     Wir nehmen den Umgang mit Deinen Daten ernst. Im Rahmen der
     Datenschutz-Grundverordnung (DSGVO) benötigen wir Deine Zustimmung zur
@@ -2358,6 +2494,7 @@ de:
       MaMpf-Homepage umgeleitet.
     no_video: 'Zu diesem Medium existiert kein Video.'
     no_manuscript: 'Zu diesem Medium existiert kein Manuskript.'
+    no_geogebra: 'Zu diesem Medium existiert kein Geogebra-Applet.'
     no_medium: 'Ein Medium mit der angeforderten id existiert nicht.'
     contradiction: 'Widersprüchliche Suchanfrage.'
     no_notification: >
@@ -2387,7 +2524,9 @@ de:
     no_teacher: 'Ein(e) DozentIn mit der angeforderten id existiert nicht.'
     no_clicker: 'Ein Clicker mit der angeforderten id existiert nicht.'
     no_clicker_access: 'Du hast keine Berechtigung, den Clicker zu bearbeiten.'
-  activerecord:
+    no_subject: 'Ein Fach mit der angeforderten id existiert nicht.'
+    no_program: 'Ein Studiengang mit der angeforderten id existiert nicht.'
+    no_division: 'Ein Teilbereich mit der angeforderten id existiert nicht.'
   activerecord:
     errors:
       no_valid_url: 'Das ist keine gültige URL.'
@@ -2420,7 +2559,7 @@ de:
         item:
           attributes:
             sort:
-              inclusion: 'Der Typ ist unzuläsig.'
+              inclusion: 'Der Typ ist unzulässig.'
             description:
               blank: 'Es muss eine Beschreibung angegeben werden.'
             start_time:
@@ -2514,6 +2653,8 @@ de:
               invalid: 'Die Angaben sind ungültig.'
         term:
           attributes:
+            active:
+              taken: 'Es kann nur ein aktives Semester geben.'
             season:
               inclusion: 'Ungültiger Typ.'
               taken: 'Dieses Semester existiert bereits.'

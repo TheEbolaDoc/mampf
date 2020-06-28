@@ -33,7 +33,7 @@ class TagsController < ApplicationController
                              description: @tag.notions.pluck(:title) +
                                             @tag.aliases.pluck(:title))
                       .where.not(pdf_destination: [nil, ''])
-    pp @references
+    @realizations = @tag.realizations
     render layout: 'application_no_sidebar'
   end
 
@@ -66,6 +66,7 @@ class TagsController < ApplicationController
     return if @errors.present?
     @tag.update(tag_params)
     if @tag.valid?
+      @tag.update(realizations: realization_params)
       # make sure the tag is touched even if only some relations have been
       # modified (important for caching)
       @tag.touch
@@ -73,7 +74,6 @@ class TagsController < ApplicationController
       return
     end
     @errors = @tag.errors
-    pp @errors
   end
 
   def create
@@ -84,9 +84,6 @@ class TagsController < ApplicationController
       return
     end
     @tag.update(tag_params)
-    # append newly created tag at the end of the *ordered* tags for
-    # the relevant sections
-    update_sections if @tag.valid? && tag_params[:section_ids]
     if @tag.valid? && !@modal
       redirect_to edit_tag_path(@tag)
       return
@@ -174,7 +171,6 @@ class TagsController < ApplicationController
         next unless section
         if !tag.in?(section.tags)
           section.tags << tag
-          section.update(tags_order: section.tags_order.push(tag.id))
         end
       end
     end
@@ -195,13 +191,32 @@ class TagsController < ApplicationController
 
   # set up cytoscape graph data for neighbourhood subgraph of @tag,
   # using only neighbourhood tags that are allowd by the user's
-  # profile settings
+  # profile settings, depending on the parameters (selection/depth) that were
+  # specified by the user)
   def set_related_tags_for_user
-    user_tags = current_user.visible_tags
+    @depth = 2
+    depth_param = params[:depth].to_i
+    @depth = depth_param if depth_param.in?([1, 2])
+    overrule_subscription_type = false
+    selection = params[:selection].to_i
+    if selection.in?([1, 2, 3])
+      overrule_subscription_type = selection
+    end
+    @selection_type = if overrule_subscription_type
+                         selection
+                       else
+                         current_user.subscription_type
+                       end
+    user_tags = current_user.visible_tags(overrule_subscription_type: overrule_subscription_type)
     @related_tags = @tag.related_tags & user_tags
-    @tags_in_neighbourhood = Tag.related_tags(@related_tags) & user_tags
+    @tags_in_neighbourhood = if @depth == 2
+                               Tag.related_tags(@related_tags) & user_tags
+                             else
+                               []
+                             end
     @tags = [@tag] + @related_tags + @tags_in_neighbourhood
-    @graph_elements = Tag.to_cytoscape(@tags, @tag)
+    @graph_elements = Tag.to_cytoscape(@tags, @tag,
+                                       highlight_related_tags: @depth == 2)
   end
 
   # set up cytoscape graph data for neighbourhood subgraph of @tag,
@@ -264,6 +279,12 @@ class TagsController < ApplicationController
                                 media_ids: [])
   end
 
+  def realization_params
+    (params.require(:tag).permit(realizations: [])[:realizations] - [''])
+      .map { |r| r.split('-') }
+      .map { |x| [x.first, x.second.to_i] }
+  end
+
   def check_permissions
     @errors = {}
     return if current_user.admin?
@@ -295,13 +316,6 @@ class TagsController < ApplicationController
 
   def added_courses
     Course.where(id: tag_params[:course_ids]) - @tag.courses
-  end
-
-  def update_sections
-    sections = Section.where(id: tag_params[:section_ids])
-    sections.each do |s|
-      s.update(tags_order: s.tags_order.to_a + [@tag.id])
-    end
   end
 
   def set_notions

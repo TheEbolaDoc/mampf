@@ -1,10 +1,10 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby '2.6.5'
+ruby '2.7.1'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '~> 6.0.2'
+gem 'rails', '~> 6.0.3'
 # Use sqlite3 as the database for Active Record
 gem 'sqlite3', '~> 1.4'
 # Use Puma as the app server
@@ -27,7 +27,7 @@ gem 'jbuilder'
 
 # Reduces boot times through caching; required in config/boot.rb
 gem 'bootsnap', '>= 1.4.2', require: false
-
+gem 'rack'
 gem 'active_model_serializers'
 # Use CoffeeScript for .coffee assets and views
 gem 'coffee-rails', '~> 5.0.0'
@@ -59,7 +59,6 @@ gem 'bootstrap'
 gem "bootstrap_form"
 gem 'devise-bootstrap-views'
 gem 'fuzzy-string-match'
-gem 'coveralls', require: false
 gem 'kaminari'
 gem "selectize-rails"
 gem 'acts_as_list'
@@ -68,7 +67,7 @@ gem 'activerecord-import',
   git: 'https://github.com/zdennis/activerecord-import.git',
   branch: 'master'
 gem 'thredded',
-  git: 'https://github.com/thredded/thredded.git',
+  git: 'https://github.com/fosterfarrell9/thredded',
   branch: 'master'
 gem 'kramdown-parser-gfm'
 gem 'thredded-markdown_katex'
@@ -82,6 +81,13 @@ gem 'progress_bar'
 gem 'barby'
 gem 'rqrcode'
 gem 'sidekiq'
+gem 'faraday'
+gem 'globalize'
+gem 'globalize-accessors'
+gem 'commontator',
+  git: 'https://github.com/fosterfarrell9/commontator',
+  branch: 'master'
+gem 'acts_as_votable'
 
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
@@ -94,7 +100,6 @@ group :development do
   # Access an interactive console on exception pages or by calling 'console' anywhere in the code.
   gem 'web-console', '>= 3.3.0'
   gem 'listen', '>= 3.0.5', '< 3.2'
-  gem 'rails-erd'
   # Spring speeds up development by keeping your application running in the background. Read more: https://github.com/rails/spring
   gem 'spring'
   gem 'spring-watcher-listen', '~> 2.0.0'
@@ -111,8 +116,6 @@ group :test do
   gem 'faker'
   gem 'database_cleaner'
   gem 'launchy'
+  gem 'simplecov', require: false
 end
-
-# Windows does not include zoneinfo files, so bundle the tzinfo-data gem
-gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 

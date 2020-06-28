@@ -31,6 +31,8 @@ class Tag < ApplicationRecord
                      dependent: :destroy
   has_many :aliases, foreign_key: 'aliased_tag_id', class_name: 'Notion'
 
+  serialize :realizations, Array
+
   accepts_nested_attributes_for :notions,
     reject_if: lambda {|attributes| attributes['title'].blank?},
     allow_destroy: true
@@ -49,16 +51,17 @@ class Tag < ApplicationRecord
   after_save :touch_lectures
   after_save :touch_sections
 
-  # remove tag from all section tag orderings
-  # execute this callback before all others, as otherwise associated sections
-  # will already have been deleted
-  before_destroy :remove_from_section_tags_order, prepend: true
-
   searchable do
     text :titles do
       title_join
     end
     integer :course_ids, multiple: true
+  end
+
+  def self.find_erdbeere_tags(sort, id)
+    Tag.where(id: Tag.pluck(:id, :realizations)
+                     .select { |x| [sort, id].in?(x.second) }
+                     .map(&:first))
   end
 
   def title
@@ -158,11 +161,13 @@ class Tag < ApplicationRecord
 
   # converts the subgraph of all tags of distance <= 2 to the given marked tag
   # into a cytoscape array representing this subgraph
-  def self.to_cytoscape(tags, marked_tag)
+  def self.to_cytoscape(tags, marked_tag, highlight_related_tags: true)
     result = []
     # add vertices
     tags.each do |t|
-      result.push(data: t.cytoscape_vertex(marked_tag))
+      result.push(data: t.cytoscape_vertex(marked_tag,
+                                           highlight_related_tags:
+                                             highlight_related_tags))
     end
     # add edges
     edges = []
@@ -173,6 +178,12 @@ class Tag < ApplicationRecord
       end
     end
     result
+  end
+
+  def realizations_cached
+    Rails.cache.fetch("#{cache_key_with_version}/realizations") do
+      realizations
+    end
   end
 
   # returns the ARel of all tags or whose id is among a given array of ids
@@ -241,27 +252,29 @@ class Tag < ApplicationRecord
 
   # returns the vertex title color of the tag in the neighbourhood graph of
   # the given marked tag
-  def color(marked_tag)
+  def color(marked_tag, highlight_related_tags: true)
     return '#f00' if self == marked_tag
-    return '#ff8c00' if in?(marked_tag.related_tags)
+    return '#ff8c00' if highlight_related_tags && in?(marked_tag.related_tags)
     '#000'
   end
 
   # returns the vertex color of the tag in the neighbourhood graph of
   # the given marked tag
-  def background(marked_tag)
+  def background(marked_tag, highlight_related_tags: true)
     return '#f00' if self == marked_tag
-    return '#ff8c00' if in?(marked_tag.related_tags)
+    return '#ff8c00' if highlight_related_tags && in?(marked_tag.related_tags)
     '#666'
   end
 
   # returns the cytoscape hash describing the tag's vertex in the neighbourhood
   # graph of the marked tag
-  def cytoscape_vertex(marked_tag)
+  def cytoscape_vertex(marked_tag, highlight_related_tags: true)
     { id: id.to_s,
       label: title,
-      color: color(marked_tag),
-      background: background(marked_tag) }
+      color: color(marked_tag,
+                   highlight_related_tags: highlight_related_tags),
+      background: background(marked_tag,
+                             highlight_related_tags: highlight_related_tags) }
   end
 
   # returns the cytoscape hash describing the edge between the tag and the
@@ -303,12 +316,12 @@ class Tag < ApplicationRecord
     related_tags << (tag.related_tags - related_tags)
     related_tags.delete(tag)
     tag.sections.each do |s|
-      new_order = if !id.in?(s.tags_order)
-                    s.tags_order.map { |t| t == tag.id ? id : t }
-                  else
-                    s.tags_order - [tag.id]
-                  end
-      s.update(tags_order: new_order)
+      next unless self.in?(s.tags)
+      old_section_tag = SectionTagJoin.find_by(section: s, tag: tag)
+      position = old_section_tag.tag_position
+      new_section_tag = SectionTagJoin.find_by(section: s, tag: self)
+      new_section_tag.insert_at(position)
+      old_section_tag.move_to_bottom
     end
     tag.aliases.update_all(aliased_tag_id: id)
   end
@@ -343,12 +356,6 @@ class Tag < ApplicationRecord
   def destroy_relations(related_tag)
     Relation.where(tag: [self, related_tag],
                    related_tag: [self, related_tag]).delete_all
-  end
-
-  def remove_from_section_tags_order
-    sections.each do |s|
-      s.update(tags_order: s.tags_order - [id])
-    end
   end
 
   def title_join

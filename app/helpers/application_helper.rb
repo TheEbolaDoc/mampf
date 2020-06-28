@@ -100,14 +100,12 @@ module ApplicationHelper
   # For a given list of media, returns the array of courses and lectures
   # the given media are associated to.
   def lecture_course_teachables(media)
-    lecture_ids = Lecture.select do |l|
-      (l.media_with_inheritance.pluck(:id) & media.pluck(:id)).present?
-    end
-                         .uniq
-    course_ids = course_media(media).pluck(:teachable_id).uniq
-    lectures = Lecture.where(id: lecture_ids)
-    courses = Course.where(id: course_ids)
-    courses + lectures
+    teachables = media.pluck(:teachable_type, :teachable_id).uniq
+    course_ids = teachables.select { |t| t.first == 'Course'}.map(&:second)
+    lecture_ids = teachables.select { |t| t.first == 'Lecture'}.map(&:second)
+    lesson_ids = teachables.select { |t| t.first == 'Lesson'}.map(&:second)
+    lecture_ids += Lesson.where(id: lesson_ids).pluck(:lecture_id).uniq
+    Course.where(id: course_ids) + Lecture.where(id: lecture_ids.uniq)
   end
 
   # For a given list of media and a given (a)course/(b)lecture,
@@ -294,5 +292,9 @@ module ApplicationHelper
                           content: text,
                           html: html },
                   title: t('info')
+  end
+
+  def realization_path(realization)
+    "/#{realization.first.downcase.pluralize}/#{realization.second}"
   end
 end
